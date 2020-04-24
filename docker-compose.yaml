@@ -1,0 +1,240 @@
+version: '3'
+
+services:
+  account-service:
+    image: account-service:0.0.1-SNAPSHOT
+    container_name: account-service
+    depends_on:
+      - config-server
+      - eureka-server
+      - cassandra
+      - zipkin
+      - admin-server
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      CONFIG_SERVER_PORT: 8888
+      EUREKA_SERVER_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
+      CASSANDRA_USER: root
+      CASSANDRA_PASS: root
+      CASSANDRA_KEYSPACE: springcloud
+      ZIPKIN_HOST: zipkin
+      ZIPKIN_PORT: 9411
+      ADMIN_SERVER_HOST: admin-server
+      ADMIN_SERVER_PORT: 9000
+    ports:
+      - 8501:8501
+
+  ticket-service:
+    image: ticket-service:0.0.1-SNAPSHOT
+    container_name: ticket-service
+    depends_on:
+      - config-server
+      - eureka-server
+      - elasticsearch
+      - mysql
+      - rabbitmq
+      - zipkin
+      - admin-server
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      CONFIG_SERVER_PORT: 8888
+      EUREKA_SERVER_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9300
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASS: root
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: root
+      RABBITMQ_PASS: root
+      RABBITMQ_QUEUE_NAME: msqueue
+      ZIPKIN_HOST: zipkin
+      ZIPKIN_PORT: 9411
+      ADMIN_SERVER_HOST: admin-server
+      ADMIN_SERVER_PORT: 9000
+    ports:
+      - 8502:8502
+
+  notification-service:
+    image: notification-service:0.0.1-SNAPSHOT
+    container_name: notification-service
+    depends_on:
+      - config-server
+      - eureka-server
+      - rabbitmq
+      - zipkin
+      - admin-server
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      CONFIG_SERVER_PORT: 8888
+      EUREKA_SERVER_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: root
+      RABBITMQ_PASS: root
+      RABBITMQ_QUEUE_NAME: msqueue
+      ZIPKIN_HOST: zipkin
+      ZIPKIN_PORT: 9411
+      ADMIN_SERVER_HOST: admin-server
+      ADMIN_SERVER_PORT: 9000
+    ports:
+      - 8503:8503
+
+  config-server:
+    image: config-server:0.0.1-SNAPSHOT
+    container_name: config-server
+    ports:
+      - 8888:8888
+
+  eureka-server:
+    image: eureka-server:0.0.1-SNAPSHOT
+    container_name: eureka-server
+    depends_on:
+      - config-server
+      - zipkin
+    environment:
+      CONFIG_SERVER_HOST: config-server
+      CONFIG_SERVER_PORT: 8888
+      ZIPKIN_HOST: zipkin
+      ZIPKIN_PORT: 9411
+    ports:
+      - 8761:8761
+
+  gateway-server:
+    image: gateway-server:0.0.1-SNAPSHOT
+    container_name: gateway-server
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_SERVER_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+    ports:
+      - 8088:8088
+
+  hystrix-dashboard:
+    image: hystrix-dashboard:0.0.1-SNAPSHOT
+    container_name: hystrix-dashboard
+    ports:
+      - 8080:8080
+
+  admin-server:
+    image: admin-server:0.0.1-SNAPSHOT
+    container_name: admin-server
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_SERVER_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+    ports:
+      - 9000:9000
+
+  cassandra:
+    image: bitnami/cassandra:3.11.6
+    container_name: cassandra
+    environment:
+      CASSANDRA_USER: root
+      CASSANDRA_PASSWORD: root
+      CASSANDRA_CLUSTER_NAME: mycluster
+      CASSANDRA_PASSWORD_SEEDER: "yes"
+    ports:
+      - 9042:9042
+    volumes:
+      - ./db-schema:/docker-entrypoint-initdb.d/
+    #volumes:
+    #- ./cassandra_data:/bitnamis
+
+  mysql:
+    image: mysql:8.0.19
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: springcloud
+      MYSQL_USER: springcloud
+      MYSQL_PASSWORD: springcloud
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - 3306:3306
+    #volumes:
+     # - ./data:/var/lib/mysql
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: elasticsearch
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+      cluster.name: elasticsearch
+    # volumes:
+    # - ./data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200 #http portu
+      - 9300:9300 #tcp portu
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.5.2
+    container_name: kibana
+    environment:
+      SERVER_NAME: localhost
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200/
+    ports:
+      - 5601:5601
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "cookie"
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: root
+      #volumes:
+      # - ./.docker/rabbitmq/etc/:/etc/rabbitmq/
+      # - ./.docker/rabbitmq/data/:/var/lib/rabbitmq/
+      # - ./.docker/rabbitmq/logs/:/var/log/rabbitmq/
+    ports:
+      - 5672:5672 #uygulaammızın bağlanacağı port ampq port
+      - 15672:15672 #managment portu
+
+  zipkin-storage:
+    image: openzipkin/zipkin-mysql
+    container_name: zipkin-mysql
+    restart: unless-stopped
+    # Uncomment to expose the storage port for testing
+    ports:
+      - 3308:3306
+    #volumes:
+    #  - dbfiles:/mysql/data
+
+  zipkin-dependencies:
+    image: openzipkin/zipkin-dependencies
+    container_name: zipkin-dependencies
+    depends_on:
+      - zipkin-storage
+    restart: unless-stopped
+    entrypoint: crond -f
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_HOST=zipkin-storage
+      # Add the baked-in username and password for the zipkin-mysql image
+      - MYSQL_USER=zipkin
+      - MYSQL_PASS=zipkin
+      # Uncomment to adjust memory used by the dependencies job
+      - JAVA_OPTS=-verbose:gc -Xms512m -Xmx512m
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    depends_on:
+      - zipkin-storage
+    restart: unless-stopped
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_HOST=zipkin-storage
+    ports:
+      # Port used for the Zipkin UI and HTTP Api
+      - 9411:9411

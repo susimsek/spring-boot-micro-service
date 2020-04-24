@@ -1,0 +1,60 @@
+#uygulamanın server portu değişti
+server:
+  port: 8502
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  health:
+    elasticsearch:
+      enabled: false
+
+#eureka server bağlantısı..spring eureka starter ile eureka servera bağlanıyoruz
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_SERVER_HOST:localhost}:${EUREKA_SERVER_PORT:8761}/eureka/
+
+#elasticsearch ayarları
+elasticsearch:
+  clusterName: elasticsearch
+  host: ${ELASTICSEARCH_HOST:localhost}
+  port: ${ELASTICSEARCH_PORT:9300}
+
+#mysql ayarları
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:springcloud}
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASS:root}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+#rabbitmq ayarları yapıldı.frontendde direkt konuşababilir
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:root}
+    password: ${RABBITMQ_PASS:root}
+
+#yazılacak kuyruğu belirttik
+  cloud:
+    stream:
+      bindings:
+        output:
+          destination: ${RABBITMQ_QUEUE_NAME:msqueue}
+
+#zipkin bağlantı ayarları
+  zipkin:
+    base-url: http://${ZIPKIN_HOST:localhost}:${ZIPKIN_PORT:9411}/
+
+#admin server ayarları
+  boot:
+    admin:
+      client:
+        url: http://${ADMIN_SERVER_HOST:localhost}:${ADMIN_SERVER_PORT:9000}/admin-server
+        instance:
+          serviceBaseUrl: http://${ADMIN_SERVER_HOST:localhost}:${ADMIN_SERVER_PORT:9000}

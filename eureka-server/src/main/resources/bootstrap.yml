@@ -1,0 +1,16 @@
+#configuration dosyasını bu ada göre config serverdan alır.
+spring:
+  application:
+    name: eureka-server
+  cloud:
+    config:
+      profile: native
+      uri: http://${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8888}
+      fail-fast: true
+      retry:
+        max-interval: 10000
+        max-attempts: 2000
+
+
+server:
+  port: 8761
