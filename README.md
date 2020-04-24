@@ -31,6 +31,7 @@ docker-compose up -d
 * Spring Cloud Hystrix Dashboard
 * Spring Boot Admin Server
 * Zipkin
+* Rabbitmq
 * Cassandra
 * Mysql
 * Elasticsearch
