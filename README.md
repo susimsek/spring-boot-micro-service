@@ -24,7 +24,7 @@ docker-compose up -d
 ## Used Technologies
 
 * Spring Boot 2.2.6
-* Spring Cloud Hoxton
+* Spring Cloud Hoxton.SR3
 * Spring Cloud Config Server
 * Spring Cloud Eureka Server
 * Spring Cloud Api Gateway Server
